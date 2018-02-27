@@ -6,39 +6,46 @@ using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using System.Data.SqlClient;
 using System.IO;
+using System.ServiceProcess;
 
 namespace GestionClotureFrais
 {
-    public class MysqlDatabase
+    public class MySQLDatabase : ServiceBase
     {
 
         //Objet de connection à la base
         private MySqlConnection connection;
         private string server;
         private string database;
-        private string uid;
+        private string usernameDatabase;
         private string password;
 
+        //Variable pour les évenements dans le journal
+        private System.Diagnostics.EventLog eventLog;
+
         //Constructeur
-        public MysqlDatabase()
+        public MySQLDatabase(System.Diagnostics.EventLog eventLog)
         {
-            this.InitConnection();
+            this.eventLog = eventLog;
+            this.initConnection();
         }
 
         /**
          * Initialisation de la connection au serveur mysql
          */
-        private void InitConnection()
+        private void initConnection()
         {
             server = "localhost";
             database = "gsb_frais";
-            uid = "root";
+            usernameDatabase = "root";
             password = "";
             string connectionString;
             connectionString = "SERVER=" + server + ";" + "DATABASE=" +
-            database + ";" + "UID=" + uid + ";" + "PASSWORD=" + password + ";";
+            database + ";" + "UID=" + usernameDatabase + ";" + "PASSWORD=" + password + ";";
 
             connection = new MySqlConnection(connectionString);
+            eventLog.WriteEntry(this.setEntitleEventLog() + " || Opération MYSQL || " +
+                                "Tentative de connection à la base de donnée avec la requête Suivante :" + connectionString);
         }
 
         /**
@@ -48,10 +55,14 @@ namespace GestionClotureFrais
         {
             if (GestionDate.entre(1, 10))
             {
+                eventLog.WriteEntry(this.setEntitleEventLog() +
+                                    "Nous sommes le " + DateTime.Now.Day + " : opération clôture de fiche.");
                 string mois = "201710";
                 string query = "SELECT `idvisiteur` FROM `fichefrais` where `mois` = '" + mois + "';";
+                eventLog.WriteEntry(this.setEntitleEventLog() + " SELECT " +
+                                    "Sélection des fiches frais du mois "+mois+".");
                 Dictionary<int, FicheMois> fichesMois = new Dictionary<int, FicheMois>();
-                if (this.OpenConnection() == true)
+                if (this.openConnection() == true)
                 {
                     int i = 0;
                     string idEtat = "CL";
@@ -62,23 +73,27 @@ namespace GestionClotureFrais
                     //Read the data and store them in the list
                     while (dataReader.Read())
                     {
+                        eventLog.WriteEntry(this.setEntitleEventLog() + " Résultat || " +
+                                           "Succès des sélection des fiches frais du mois " + mois + ".");
                         string idVisiteur = dataReader["idvisiteur"] + "";
                         FicheMois uneFiche = new FicheMois(idVisiteur, mois, idEtat);
                         fichesMois.Add(i, uneFiche);
                         i++;
                     }
                 }
-                this.CloseConnection();
+                this.closeConnection();
 
                 for (int i = 0; i < fichesMois.Count; i++)
                 {
+                    eventLog.WriteEntry(this.setEntitleEventLog() + " Résultat || " +
+                                       "Mise à jour des fiches frais du mois " + mois + ".");
                     query = "UPDATE fichefrais" +
                             " SET idetat='CL'" +
                             " WHERE idvisiteur='" + fichesMois[i].getIdVisiteur() + "'" +
                             " AND mois = '" + fichesMois[i].getMois() + "'";
                     Console.WriteLine(query);
                     //Open connection
-                    if (this.OpenConnection() == true)
+                    if (this.openConnection() == true)
                     {
                         //create mysql command
                         MySqlCommand cmd = new MySqlCommand();
@@ -91,18 +106,19 @@ namespace GestionClotureFrais
                         cmd.ExecuteNonQuery();
 
                         //close connection
-                        this.CloseConnection();
+                        this.closeConnection();
                     }
                 }
             }
             else
             {
-                Console.WriteLine("La cloture est déjà terminée!");
+                eventLog.WriteEntry(this.setEntitleEventLog() + " Erreur || " +
+                                   "Nous ne somme pas le bon jour pour la cloture.");
             }
         }
 
         //Close connection
-        private bool CloseConnection()
+        private bool closeConnection()
         {
             try
             {
@@ -130,7 +146,9 @@ namespace GestionClotureFrais
                                 "WHERE `mois` = '" + mois +
                                 "' AND idetat = 'CL';";
                 Dictionary<int, FicheMois> fichesMois = new Dictionary<int, FicheMois>();
-                if (this.OpenConnection() == true)
+                eventLog.WriteEntry(this.setEntitleEventLog() + " || Opération MYSQL || " +
+                                    "Validation des fiches pour le mois " + mois);
+                if (this.openConnection() == true)
                 {
                     int i = 0;
                     string idEtat = "VA";
@@ -141,16 +159,20 @@ namespace GestionClotureFrais
                     //Read the data and store them in the list
                     while (dataReader.Read())
                     {
+                        eventLog.WriteEntry(this.setEntitleEventLog() + " || Opération MYSQL-SELECT || " +
+                                            "Succès de l'opération SELECT " + mois);
                         string idVisiteur = dataReader["idvisiteur"] + "";
                         FicheMois uneFiche = new FicheMois(idVisiteur, mois, idEtat);
                         fichesMois.Add(i, uneFiche);
                         i++;
                     }
                 }
-                this.CloseConnection();
+                this.closeConnection();
 
                 for (int i = 0; i < fichesMois.Count; i++)
                 {
+                    eventLog.WriteEntry(this.setEntitleEventLog() + " || Opération MYSQL-UPDATE || " +
+                                        "Début de l'opération de validation des frais (UPDATE)" + mois);
                     query = "UPDATE fichefrais" +
                             " SET idetat='VA'" +
                             " WHERE idvisiteur='" + fichesMois[i].getIdVisiteur() + "'" +
@@ -158,7 +180,7 @@ namespace GestionClotureFrais
                                 " AND idetat = 'CL'";
                     Console.WriteLine(query);
                     //Open connection
-                    if (this.OpenConnection() == true)
+                    if (this.openConnection() == true)
                     {
                         //create mysql command
                         MySqlCommand cmd = new MySqlCommand();
@@ -171,19 +193,23 @@ namespace GestionClotureFrais
                         cmd.ExecuteNonQuery();
 
                         //close connection
-                        this.CloseConnection();
+                        this.closeConnection();
                     }
                 }
-            }else {
-                Console.WriteLine("Pas encore la validation!");
+            }else
+            {
+                eventLog.WriteEntry(this.setEntitleEventLog() + " || Erreur || " +
+                                    "Mauvais jours pour l'opération de validation des fiches de frais.");
             }
         }
 
-        private bool OpenConnection()
+        private bool openConnection()
         {
             try
             {
                 connection.Open();
+                eventLog.WriteEntry(this.setEntitleEventLog() + " Connection || " +
+                                   "Succès de connection.");
                 return true;
             }
             catch (MySqlException ex)
@@ -193,18 +219,21 @@ namespace GestionClotureFrais
                 //The two most common error numbers when connecting are as follows:
                 //0: Cannot connect to server.
                 //1045: Invalid user name and/or password.
-                switch (ex.Number)
-                {
-                    case 0:
-                        Console.WriteLine("Cannot connect to server.  Contact administrator");
-                        break;
-
-                    case 1045:
-                        Console.WriteLine("Invalid username/password, please try again");
-                        break;
-                }
+                eventLog.WriteEntry(this.setEntitleEventLog() + " Erreur || " +
+                                   ex.ToString());
                 return false;
             }
         }
+
+
+        private string setEntitleEventLog()
+        {
+            return DateTime.Now.Year + "-" +
+                   DateTime.Now.Month + "-" +
+                   DateTime.Now.Day + "||" +
+                   (DateTime.Now.Hour) + ":" +
+                   (DateTime.Now.Minute) + "||";
+        }
+
     }
 }

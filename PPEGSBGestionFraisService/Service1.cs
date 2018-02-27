@@ -22,13 +22,20 @@ namespace PPEGSBGestionFraisService
         private int jourCloture = 5;
         private int jourValidation = 20;
 
+        //Variable pour les évenements dans le journal
+        private System.Diagnostics.EventLog eventLog;
+
         /**
          * Constructeur du service windows
          */
         public PPEGSBApplicationFraisService(string[] args)
         {
+            //Initialisation des composant
             InitializeComponent();
+            //Initialisation du timer
             _timer = new System.Timers.Timer();
+
+            //Recherches des variables pour le jour de clôture et de validation dans la base de registre
             string jourClotureVarWindows = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("jourClotureGSBFraisService"))?this.jourCloture.ToString():Environment.GetEnvironmentVariable("jourClotureGSBFraisService");
             string jourValidationVarWindows = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("jourValidationGSBFraisService")) ? this.jourValidation.ToString() : Environment.GetEnvironmentVariable("jourValidationGSBFraisService");
             
@@ -64,21 +71,25 @@ namespace PPEGSBGestionFraisService
             _timer.Enabled = true;
             _timer.Interval = _scheduleTime.Subtract(DateTime.Now).TotalSeconds * 1000;
             _timer.Elapsed += new System.Timers.ElapsedEventHandler(Timer_Elapsed);
+            MySQLDatabase db = new MySQLDatabase(eventLog);
 
             if (DateTime.Now.Day <= 10 && this.operationType == "cloture")
             {
                 //On clôture les fiches
-                MysqlDatabase db = new MysqlDatabase();
+                eventLog.WriteEntry("Nous somme le "+DateTime.Now.Day+" : Clôturation de fiche");
                 db.clotureFiches();
+                eventLog.WriteEntry("Fiches clôturées");
                 this.operationType = "validation";
             }
             else if (DateTime.Now.Day <= 20 && this.operationType == "validation")
             {
                 //On valide les fiches
-                MysqlDatabase db = new MysqlDatabase();
+                eventLog.WriteEntry("Nous somme le " + DateTime.Now.Day + " : Validation de fiche");
                 db.validationFiches();
                 this.operationType = "validation";
+                eventLog.WriteEntry("Fiches validées");
             }
+            eventLog.WriteEntry("Fin du service");
         }
 
         protected void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)

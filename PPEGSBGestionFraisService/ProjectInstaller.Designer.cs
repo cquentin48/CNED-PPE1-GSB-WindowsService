@@ -36,9 +36,12 @@
             this.serviceProcessInstaller1.Account = System.ServiceProcess.ServiceAccount.LocalService;
             this.serviceProcessInstaller1.Password = null;
             this.serviceProcessInstaller1.Username = null;
+            this.serviceProcessInstaller1.AfterInstall += new System.Configuration.Install.InstallEventHandler(this.serviceProcessInstaller1_AfterInstall);
             // 
             // serviceInstaller1
             // 
+            this.serviceInstaller1.Description = "Service Windows de Gestion des opérations de Frais pour le serveur gsb_frais";
+            this.serviceInstaller1.DisplayName = "GSB Frais - Gestions des opérations de gestion de frais";
             this.serviceInstaller1.ServiceName = "PPEGSBApplicationFraisService";
             this.serviceInstaller1.AfterInstall += new System.Configuration.Install.InstallEventHandler(this.serviceInstaller1_AfterInstall);
             // 
