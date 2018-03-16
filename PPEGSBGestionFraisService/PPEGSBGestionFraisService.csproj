@@ -46,6 +46,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\PPEGSBGestionFraisService.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -76,10 +77,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DBConnect.cs" />
     <Compile Include="FicheMois.cs" />
     <Compile Include="GestionDate.cs" />
-    <Compile Include="MysqlDatabase.cs" />
+    <Compile Include="MysqlDatabase.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Popup.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>

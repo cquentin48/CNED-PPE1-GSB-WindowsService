@@ -10,6 +10,9 @@ using System.ServiceProcess;
 
 namespace GestionClotureFrais
 {
+    /// <summary>
+    /// Classe de gestion pour la base mysql
+    /// </summary>
     public class MySQLDatabase : ServiceBase
     {
 
@@ -23,16 +26,19 @@ namespace GestionClotureFrais
         //Variable pour les évenements dans le journal
         private System.Diagnostics.EventLog eventLog;
 
-        //Constructeur
+        /// <summary>
+        /// Constructeur
+        /// </summary>
+        /// <param name="eventLog">Variable pour les évenements à insérer dans le fichier journal</param>
         public MySQLDatabase(System.Diagnostics.EventLog eventLog)
         {
             this.eventLog = eventLog;
             this.initConnection();
         }
 
-        /**
-         * Initialisation de la connection au serveur mysql
-         */
+        /// <summary>
+        /// Initialisation de la connection au serveur mysql
+        /// </summary>
         private void initConnection()
         {
             server = "localhost";
@@ -48,9 +54,9 @@ namespace GestionClotureFrais
                                 "Tentative de connection à la base de donnée avec la requête Suivante :" + connectionString);
         }
 
-        /**
-         * Cloture des fiches du mois précédent lorsque nous sommes entre le 1er et le 10 du mois
-         */
+        ///
+        ///<summary>Cloture des fiches du mois précédent lorsque nous sommes entre le 1er et le 10 du mois</summary>
+        ///
         public void clotureFiches()
         {
             if (GestionDate.entre(1, 10))
@@ -117,7 +123,10 @@ namespace GestionClotureFrais
             }
         }
 
-        //Close connection
+        /// <summary>
+        /// Fermeture de connection
+        /// </summary>
+        /// <returns>Vrai en cas de succès. Faux en cas d'erreur</returns>
         private bool closeConnection()
         {
             try
@@ -132,9 +141,9 @@ namespace GestionClotureFrais
             }
         }
 
-        /**
-         * Fonction de validation des fiches ayant pour etat = 'Validé
-         **/
+        /// <summary>
+        /// Validation des fiches de frais
+        /// </summary>
         public void validationFiches()
         {
             if (GestionDate.entre(20, 31))
@@ -203,6 +212,10 @@ namespace GestionClotureFrais
             }
         }
 
+        /// <summary>
+        /// Ouverture de la connection sql
+        /// </summary>
+        /// <returns>Retourne vrai en cas de connection ouverte, faux en cas d'échec</returns>
         private bool openConnection()
         {
             try
@@ -233,6 +246,189 @@ namespace GestionClotureFrais
                    DateTime.Now.Day + "||" +
                    (DateTime.Now.Hour) + ":" +
                    (DateTime.Now.Minute) + "||";
+        }
+
+        ///<summary>
+        /// Fonction d'ajout de donnée dans une requête SQL
+        /// </summary>
+        /// <param name="tableName">Le nom de la table sql</param>
+        /// <param name="newValues">Tableau des données à insérer (clé : champs sql, valeurs : valeurs sql)</param>
+        public void insertSQL(String tableName, Dictionary<String, String>newValues) {
+            String query = "INSERT INTO " + tableName+"(";
+            int rang = 0;
+            foreach(String key in newValues.Keys) {
+                if (rang == newValues.Count) {
+                    query += key + ")";
+                }else {
+                    query += key + ",";
+                }
+            }
+            query = "VALUES (";
+            foreach (String newValue in newValues.Values)
+            {
+                if (rang == newValues.Count)
+                {
+                    query += newValue + ")";
+                }
+                else
+                {
+                    query += newValue + ",";
+                }
+            }
+
+            if (this.openConnection() == true)
+            {
+                //create mysql command
+                MySqlCommand cmd = new MySqlCommand();
+                //Assign the query using CommandText
+                cmd.CommandText = query;
+                //Assign the connection using Connection
+                cmd.Connection = connection;
+
+                //Execute query
+                cmd.ExecuteNonQuery();
+
+                //close connection
+                this.closeConnection();
+            }
+        }
+
+
+        ///<summary>
+        /// Fonction de mise à jour des données dans une requête SQL
+        /// </summary>
+        /// <param name="tableName">Le nom de la table sql</param>
+        /// <param name="whereConditions">Tableau des conditions where (la clé doit contenir les opérateurs LIKE, =, ...</param>
+        /// <param name="newValues">Les nouvelles valeurs pour la requête SQL (clé : champs, valeur du tableau : valeurs sql)</param>
+        public void update(String tableName, Dictionary<String, String> newValues, Dictionary<String, String>whereConditions)
+        {
+            String query = "UPDATE " + tableName + " ";
+            int rang = 0;
+            foreach (String key in newValues.Keys)
+            {
+                if (rang == newValues.Count)
+                {
+                    query += key + ")";
+                }
+                else
+                {
+                    query += key + ",";
+                }
+            }
+            query = "SET ";
+            foreach (String newValue in newValues.Values)
+            {
+                if (rang == newValues.Count)
+                {
+                    query += newValue;
+                }
+                else
+                {
+                    query += newValue + ",";
+                }
+            }
+            if (whereConditions.Count != 0)
+            {
+                query += " WHERE ";
+
+                foreach (String key in whereConditions.Keys )
+                {
+                    if (rang == whereConditions.Count)
+                    {
+                        if(whereConditions[key] is int) {
+                            query += key + whereConditions[key];
+                        }
+                        else {
+                            query += key + "\"" + whereConditions[key] + "\"";
+                        }
+                    }
+                    else
+                    {
+                        if (whereConditions[key] is int)
+                        {
+                            query += key + whereConditions[key] + "AND";
+                        }
+                        else
+                        {
+                            query += key + "\"" + whereConditions[key] + "\"" + "AND";
+                        }
+                    }
+                }
+            }
+
+            if (this.openConnection() == true)
+            {
+                //create mysql command
+                MySqlCommand cmd = new MySqlCommand();
+                //Assign the query using CommandText
+                cmd.CommandText = query;
+                //Assign the connection using Connection
+                cmd.Connection = connection;
+
+                //Execute query
+                cmd.ExecuteNonQuery();
+
+                //close connection
+                this.closeConnection();
+            }
+        }
+
+        ///<summary>
+        /// Fonction de suppression des données dans une requête SQL
+        /// </summary>
+        /// <param name="tableName">Le nom de la table sql</param>
+        /// <param name="whereConditions">Tableau des conditions where (la clé doit contenir les opérateurs LIKE, =, ...</param>
+
+        public void delete(String tableName, Dictionary<String, String> whereConditions)
+        {
+            String query = "DELETE FROM " + tableName;
+            int rang = 0;
+            if (whereConditions.Count != 0)
+            {
+                query += " WHERE ";
+
+                foreach (String key in whereConditions.Keys)
+                {
+                    if (rang == whereConditions.Count)
+                    {
+                        if (whereConditions[key] is int)
+                        {
+                            query += key + whereConditions[key];
+                        }
+                        else
+                        {
+                            query += key + "\"" + whereConditions[key] + "\"";
+                        }
+                    }
+                    else
+                    {
+                        if (whereConditions[key] is int)
+                        {
+                            query += key + whereConditions[key] + "AND";
+                        }
+                        else
+                        {
+                            query += key + "\"" + whereConditions[key] + "\"" + "AND";
+                        }
+                    }
+                }
+            }
+
+            if (this.openConnection() == true)
+            {
+                //create mysql command
+                MySqlCommand cmd = new MySqlCommand();
+                //Assign the query using CommandText
+                cmd.CommandText = query;
+                //Assign the connection using Connection
+                cmd.Connection = connection;
+
+                //Execute query
+                cmd.ExecuteNonQuery();
+
+                //close connection
+                this.closeConnection();
+            }
         }
 
     }

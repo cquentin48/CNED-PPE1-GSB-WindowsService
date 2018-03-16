@@ -1,5 +1,8 @@
 ﻿namespace PPEGSBGestionFraisService
 {
+    /// <summary>
+    /// Classe d'installation du service windows
+    /// </summary>
     partial class ProjectInstaller
     {
         /// <summary>

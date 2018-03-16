@@ -1,5 +1,11 @@
-﻿namespace PPEGSBGestionFraisService
+﻿/// <summary>
+/// Service Windows de gestion des fiches de frais du mois
+/// </summary>
+namespace PPEGSBGestionFraisService
 {
+    /// <summary>
+    /// Service Windows de gestion des fiches de frais du mois
+    /// </summary>
     partial class PPEGSBApplicationFraisService
     {
         /// <summary> 

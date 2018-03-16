@@ -9,8 +9,14 @@ using System.Text;
 using System.Threading.Tasks;
 using GestionClotureFrais;
 
+/// <summary>
+/// Service Windows de gestion de cloture de frais
+/// </summary>
 namespace PPEGSBGestionFraisService
 {
+    /// <summary>
+    /// Classe gérant le service windows
+    /// </summary>
     public partial class PPEGSBApplicationFraisService : ServiceBase
     {
         //private System.ComponentModel.IContainer components;
@@ -19,25 +25,22 @@ namespace PPEGSBGestionFraisService
         private string operationType;
 
         //Les jours par défault de clôture et de validation
-        private int jourCloture = 5;
+        private int jourCloture = 1;
         private int jourValidation = 20;
 
         //Variable pour les évenements dans le journal
         private System.Diagnostics.EventLog eventLog;
 
-        /**
-         * Constructeur du service windows
-         */
+        /// <summary>
+        /// Constructeur du service windows
+        /// </summary>
+        /// <param name="args">Non utilisé</param>
         public PPEGSBApplicationFraisService(string[] args)
         {
             //Initialisation des composant
             InitializeComponent();
             //Initialisation du timer
             _timer = new System.Timers.Timer();
-
-            //Recherches des variables pour le jour de clôture et de validation dans la base de registre
-            string jourClotureVarWindows = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("jourClotureGSBFraisService"))?this.jourCloture.ToString():Environment.GetEnvironmentVariable("jourClotureGSBFraisService");
-            string jourValidationVarWindows = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("jourValidationGSBFraisService")) ? this.jourValidation.ToString() : Environment.GetEnvironmentVariable("jourValidationGSBFraisService");
             
             //On récupère le type d'opération
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("typeOperationGSBFraisService")))
@@ -53,19 +56,15 @@ namespace PPEGSBGestionFraisService
                     this.operationType = "validation";
                 }
             }
-
-            //Si aucune valeur n'a été définie dans les variables d'environement windows, on prends les valeurs par défault
-            this.jourCloture = String.IsNullOrEmpty(jourClotureVarWindows)? jourCloture:-1;
-            this.jourValidation = String.IsNullOrEmpty(jourClotureVarWindows) ? jourCloture : -1;
-
-            int.TryParse(Environment.GetEnvironmentVariable("jourClotureGSBFraisService"), out this.jourCloture);
-            int.TryParse(Environment.GetEnvironmentVariable("jourValidationGSBFraisService"), out this.jourValidation);
             
             
             _scheduleTime = DateTime.Today.AddDays(1).AddHours(23);
         }
 
-        //Fonction de début du service
+        /// <summary>
+        /// Fonction de début de services
+        /// </summary>
+        /// <param name="args">Non utilisé ici</param>
         protected override void OnStart(string[] args)
         {
             _timer.Enabled = true;
@@ -92,6 +91,12 @@ namespace PPEGSBGestionFraisService
             eventLog.WriteEntry("Fin du service");
         }
 
+
+        /// <summary>
+        /// Fonction d'écoulement de temps entre deux utilisations du service
+        /// </summary>
+        /// <param name="sender">Non utilisé</param>
+        /// <param name="e">Non utilisé</param>
         protected void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             //On récupère le nombre de jours dans le mois à partir du jour de clôture jusqu'au jour de la prochaine opération
@@ -111,7 +116,9 @@ namespace PPEGSBGestionFraisService
             }
         }
 
-        //Fonction d'arrêt du service
+        /// <summary>
+        /// Fonction d'arrêt du service
+        /// </summary>
         protected override void OnStop()
         {
             //On écrit dans l'editeur de registre les variables d'environnement si elles n'existent pas
@@ -127,20 +134,10 @@ namespace PPEGSBGestionFraisService
             Environment.SetEnvironmentVariable("operationType", this.operationType);
         }
 
+        /// <summary>
+        /// Fonction de premier lancement || NON UTILISE ICI
+        /// </summary>
         public void firstTime() {
-            Console.WriteLine("Premier lancement du service de gestion de frais PDO GSB.");
-            Console.WriteLine("Merci de bien vouloir indiquer l'heure à laquelle le service va opérer.");
-            string lineEntered = Console.ReadLine();
-            int result;
-            Boolean possible = int.TryParse(lineEntered, out result);
-            if (possible == true && result>=0 && result<=23) {
-                Environment.SetEnvironmentVariable("PDOGSBHOURREFRESH", result.ToString());
-                if(DateTime.Now.Day < 20){ 
-                    Environment.SetEnvironmentVariable("PDOGSBOPERATIONTYPE", "cloture");
-                }else {
-                    Environment.SetEnvironmentVariable("PDOGSBOPERATIONTYPE", "validation");
-                }
-            }
         }
     }
 }

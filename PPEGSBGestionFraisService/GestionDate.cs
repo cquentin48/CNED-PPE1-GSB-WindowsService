@@ -6,12 +6,15 @@ using System.Threading.Tasks;
 
 namespace GestionClotureFrais
 {
+    /// <summary>
+    /// Classe abstraite de gestion des dates
+    /// </summary>
     public abstract class GestionDate
     {
-
-        /* Retourne le mois précédent
-         * @return string mois le précédent
-         */
+        /// <summary>
+        /// Retourne le mois précédent
+        /// </summary>
+        /// <returns>Le mois précédent sous la forme MM</returns>
         public static String getMoisPrecedent()
         {
             string mois = DateTime.Now.ToString("MM");
@@ -29,20 +32,20 @@ namespace GestionClotureFrais
             return mois;
         }
 
-        /* Retourne le mois précédent
-         * @return string mois le précédent
-         * @param mois
-         */
-        public static void getMoisPrecedent(String mois)
+        /// <summary>
+        /// Retourne le mois précédent
+        /// </summary>
+        /// <param name="mois">Le mois</param>
+        /// <returns>Le mois précédent au format MM</returns>
+        public static String getMoisPrecedent(String mois)
         {
             int moisPrecedent;
             int.TryParse(mois, out moisPrecedent);
-            mois = (moisPrecedent <= 10) ? "0" : "" + (moisPrecedent - 1);
+            return (moisPrecedent <= 10) ? "0" : "" + (moisPrecedent - 1);
         }
 
-        /* Retourne le mois suivant
-         * @return string mois le suivant
-         */
+        /// <summary>Retourne le mois suivant</summary>
+        /// <returns>Le mois suivant</returns>
         public static String getMoisSuivant()
         {
             string mois = DateTime.Now.ToString("MM");
@@ -54,28 +57,36 @@ namespace GestionClotureFrais
             return mois;
         }
 
-        /* Retourne le mois suivant
-         * @return string mois le suivant
-         * @param mois
-         */
-        public static void getMoisSuivant(String mois)
+        /// <summary>Retourne le mois suivant</summary>
+        /// <param name="moisEnCours"> un mois</param>
+        /// <returns>Le mois suivant</returns>
+        public static String getMoisSuivant(String moisEnCours)
         {
+            string mois = moisEnCours;
             int moisSuivant;
             int.TryParse(mois, out moisSuivant);
-            mois = (moisSuivant <= 10) ? "0" : "" + (moisSuivant + 1);
+            mois = (moisSuivant <= 10) ? "0" : "" + moisSuivant;
+            return mois;
         }
 
-        /* Vérifie si le jour d'aujourd'hui est compris entre deux jours
-         * @return boolean
-         */
+        /// <summary>
+        /// Vérifie si le jour d'aujourd'hui est compris entre deux jours
+        /// </summary>
+        /// <param name="jour1">Un jour avant</param>
+        /// <param name="jour2">Un jour après</param>
+        /// <returns>Booléen : vrai si le jour d'ajourd'hui se trouve entre les deux jours, faux sinon</returns>
         public static Boolean entre(int jour1, int jour2)
         {
             return (jour1 <= DateTime.Now.Day && DateTime.Now.Day <= jour2) ? true : false;
         }
 
-        /* Vérifie si le jour d'aujourd'hui est compris entre deux jours
-         * @return boolean
-         */
+        /// <summary>
+        /// Vérifie si le troisième jour passé en paramètre est compris entre deux jours
+        /// </summary>
+        /// <param name="jour1">Un jour avant</param>
+        /// <param name="jour2">Un jour après</param>
+        /// <param name="jour3">Un jour passé en paramètre pour vérifier si ce jour se trouve entre les deux premiers</param>
+        /// <returns>Booléen : vrai si le jour d'ajourd'hui se trouve entre les deux jours, faux sinon</returns>
         public static Boolean entre(int jour1, int jour2, int jour3)
         {
             return (jour1 <= jour3 && jour3 <= jour2) ? true : false;
