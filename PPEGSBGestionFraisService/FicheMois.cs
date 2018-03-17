@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace GestionClotureFrais
 {
+
     /// <summary>
     /// Classe métier de gestion des fiches du mois
     /// </summary>
